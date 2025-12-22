@@ -3,63 +3,64 @@ import questionsData from "@/data/dataset.json";
 
 const questions = questionsData as Question[];
 
-// Extract unique courses from data
+// Normalize exam names to merge variants into main courses
+function normalizeExamName(exam: string): "GATE" | "UGC NET" {
+  const upperExam = exam.toUpperCase();
+  if (upperExam.includes("GATE")) {
+    return "GATE";
+  }
+  return "UGC NET";
+}
+
+// Check if a question belongs to a course
+function questionBelongsToCourse(question: Question, courseId: string): boolean {
+  const normalizedExam = normalizeExamName(question.exam);
+  return normalizedExam.toLowerCase().replace(/\s+/g, "-") === courseId;
+}
+
+// Extract courses - merged into GATE and UGC NET
 export function getCourses(): Course[] {
-  const examMap = new Map<string, { questions: Question[]; topics: Set<string> }>();
+  const courseMap = new Map<string, { questions: Question[]; topics: Set<string> }>();
   
   questions.forEach((q) => {
-    const key = q.exam;
-    if (!examMap.has(key)) {
-      examMap.set(key, { questions: [], topics: new Set() });
+    const normalizedExam = normalizeExamName(q.exam);
+    if (!courseMap.has(normalizedExam)) {
+      courseMap.set(normalizedExam, { questions: [], topics: new Set() });
     }
-    const entry = examMap.get(key)!;
+    const entry = courseMap.get(normalizedExam)!;
     entry.questions.push(q);
     entry.topics.add(q.topic);
   });
 
-  const courseColors: Record<string, string> = {
-    "GATE": "hsl(222 47% 20%)",
-    "GATE CSE": "hsl(222 47% 20%)",
-    "GATE DA": "hsl(262 47% 30%)",
-    "UGC NET": "hsl(172 66% 40%)",
+  const courseConfig: Record<string, { color: string; icon: string; description: string }> = {
+    "GATE": {
+      color: "hsl(222 47% 20%)",
+      icon: "cpu",
+      description: "Graduate Aptitude Test in Engineering - Computer Science & IT"
+    },
+    "UGC NET": {
+      color: "hsl(172 66% 40%)",
+      icon: "book-open", 
+      description: "University Grants Commission National Eligibility Test - Computer Science"
+    }
   };
 
-  const courseIcons: Record<string, string> = {
-    "GATE": "cpu",
-    "GATE CSE": "cpu",
-    "GATE DA": "bar-chart-3",
-    "UGC NET": "book-open",
-  };
-
-  return Array.from(examMap.entries()).map(([exam, data]) => ({
+  return Array.from(courseMap.entries()).map(([exam, data]) => ({
     id: exam.toLowerCase().replace(/\s+/g, "-"),
     name: exam,
     shortName: exam.split(" ").map(w => w[0]).join(""),
-    description: getExamDescription(exam),
+    description: courseConfig[exam]?.description || "Competitive examination preparation",
     totalQuestions: data.questions.length,
     totalTopics: data.topics.size,
-    icon: courseIcons[exam] || "book-open",
-    color: courseColors[exam] || "hsl(172 66% 40%)",
+    icon: courseConfig[exam]?.icon || "book-open",
+    color: courseConfig[exam]?.color || "hsl(172 66% 40%)",
   }));
 }
 
-function getExamDescription(exam: string): string {
-  const descriptions: Record<string, string> = {
-    "GATE": "Graduate Aptitude Test in Engineering - Computer Science",
-    "GATE CSE": "Graduate Aptitude Test in Engineering - Computer Science & IT",
-    "GATE DA": "Graduate Aptitude Test in Engineering - Data Science & AI",
-    "UGC NET": "University Grants Commission National Eligibility Test - Computer Science",
-  };
-  return descriptions[exam] || "Competitive examination preparation";
-}
-
-// Get topics for a specific course
+// Get topics for a specific course (merged)
 export function getTopicsForCourse(courseId: string): Topic[] {
-  const examName = courseId.replace(/-/g, " ").toUpperCase();
-  const courseQuestions = questions.filter(
-    (q) => q.exam.toLowerCase() === examName.toLowerCase() || 
-           q.exam.toLowerCase().includes(courseId.replace(/-/g, " "))
-  );
+  // Filter questions that belong to this merged course
+  const courseQuestions = questions.filter((q) => questionBelongsToCourse(q, courseId));
 
   const topicMap = new Map<string, { questions: Question[]; subjects: Set<string> }>();
   
@@ -72,26 +73,25 @@ export function getTopicsForCourse(courseId: string): Topic[] {
     entry.subjects.add(q.subject);
   });
 
-  return Array.from(topicMap.entries()).map(([topic, data]) => ({
-    id: topic.toLowerCase().replace(/\s+/g, "-"),
-    name: topic,
-    courseId,
-    questionCount: data.questions.length,
-    subjects: Array.from(data.subjects),
-  }));
+  return Array.from(topicMap.entries())
+    .map(([topic, data]) => ({
+      id: topic.toLowerCase().replace(/\s+/g, "-"),
+      name: topic,
+      courseId,
+      questionCount: data.questions.length,
+      subjects: Array.from(data.subjects),
+    }))
+    .sort((a, b) => b.questionCount - a.questionCount);
 }
 
-// Get questions for practice
+// Get questions for practice (using merged course logic)
 export function getQuestionsForPractice(
   courseId: string,
   topicId?: string,
   limit?: number
 ): Question[] {
-  const examName = courseId.replace(/-/g, " ");
-  
-  let filtered = questions.filter(
-    (q) => q.exam.toLowerCase().includes(examName.toLowerCase())
-  );
+  // Filter questions that belong to this merged course
+  let filtered = questions.filter((q) => questionBelongsToCourse(q, courseId));
 
   if (topicId) {
     const topicName = topicId.replace(/-/g, " ");
