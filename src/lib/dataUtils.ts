@@ -3,74 +3,38 @@ import questionsData from "@/data/dataset.json";
 
 const questions = questionsData as Question[];
 
-// Normalize exam names to merge variants into main courses
-function normalizeExamName(exam: string): "GATE" | "UGC NET" {
-  const upperExam = exam.toUpperCase();
-  if (upperExam.includes("GATE")) {
-    return "GATE";
-  }
-  return "UGC NET";
-}
-
-// Check if a question belongs to a course
-function questionBelongsToCourse(question: Question, courseId: string): boolean {
-  const normalizedExam = normalizeExamName(question.exam);
-  return normalizedExam.toLowerCase().replace(/\s+/g, "-") === courseId;
-}
-
-// Extract courses - merged into GATE and UGC NET
+// Single unified course - all questions merged
 export function getCourses(): Course[] {
-  const courseMap = new Map<string, { questions: Question[]; topics: Set<string> }>();
+  const totalQuestions = questions.length;
+  const topics = new Set(questions.map(q => q.topic));
   
-  questions.forEach((q) => {
-    const normalizedExam = normalizeExamName(q.exam);
-    if (!courseMap.has(normalizedExam)) {
-      courseMap.set(normalizedExam, { questions: [], topics: new Set() });
-    }
-    const entry = courseMap.get(normalizedExam)!;
-    entry.questions.push(q);
-    entry.topics.add(q.topic);
-  });
-
-  const courseConfig: Record<string, { color: string; icon: string; description: string }> = {
-    "GATE": {
-      color: "hsl(222 47% 20%)",
-      icon: "cpu",
-      description: "Graduate Aptitude Test in Engineering - Computer Science & IT"
-    },
-    "UGC NET": {
-      color: "hsl(172 66% 40%)",
-      icon: "book-open", 
-      description: "University Grants Commission National Eligibility Test - Computer Science"
-    }
-  };
-
-  return Array.from(courseMap.entries()).map(([exam, data]) => ({
-    id: exam.toLowerCase().replace(/\s+/g, "-"),
-    name: exam,
-    shortName: exam.split(" ").map(w => w[0]).join(""),
-    description: courseConfig[exam]?.description || "Competitive examination preparation",
-    totalQuestions: data.questions.length,
-    totalTopics: data.topics.size,
-    icon: courseConfig[exam]?.icon || "book-open",
-    color: courseConfig[exam]?.color || "hsl(172 66% 40%)",
-  }));
+  return [{
+    id: 'exam-prep',
+    name: 'Exam Preparation',
+    shortName: 'EP',
+    description: 'Complete question bank for competitive exam preparation - UGC NET & GATE',
+    icon: 'book-open',
+    color: '#3B82F6',
+    totalQuestions,
+    totalTopics: topics.size
+  }];
 }
 
-// Get topics for a specific course (merged)
+// Get all topics (single course)
 export function getTopicsForCourse(courseId: string): Topic[] {
-  // Filter questions that belong to this merged course
-  const courseQuestions = questions.filter((q) => questionBelongsToCourse(q, courseId));
-
   const topicMap = new Map<string, { questions: Question[]; subjects: Set<string> }>();
   
-  courseQuestions.forEach((q) => {
-    if (!topicMap.has(q.topic)) {
-      topicMap.set(q.topic, { questions: [], subjects: new Set() });
+  questions.forEach(q => {
+    const existing = topicMap.get(q.topic);
+    if (existing) {
+      existing.questions.push(q);
+      existing.subjects.add(q.subject);
+    } else {
+      topicMap.set(q.topic, {
+        questions: [q],
+        subjects: new Set([q.subject])
+      });
     }
-    const entry = topicMap.get(q.topic)!;
-    entry.questions.push(q);
-    entry.subjects.add(q.subject);
   });
 
   return Array.from(topicMap.entries())
@@ -84,14 +48,13 @@ export function getTopicsForCourse(courseId: string): Topic[] {
     .sort((a, b) => b.questionCount - a.questionCount);
 }
 
-// Get questions for practice (using merged course logic)
+// Get questions for practice
 export function getQuestionsForPractice(
   courseId: string,
   topicId?: string,
   limit?: number
 ): Question[] {
-  // Filter questions that belong to this merged course
-  let filtered = questions.filter((q) => questionBelongsToCourse(q, courseId));
+  let filtered = [...questions];
 
   if (topicId) {
     const topicName = topicId.replace(/-/g, " ");
@@ -101,7 +64,7 @@ export function getQuestionsForPractice(
   }
 
   // Shuffle questions
-  const shuffled = [...filtered].sort(() => Math.random() - 0.5);
+  const shuffled = filtered.sort(() => Math.random() - 0.5);
   
   return limit ? shuffled.slice(0, limit) : shuffled;
 }
