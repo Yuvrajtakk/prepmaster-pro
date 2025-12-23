@@ -367,7 +367,10 @@ export default function PracticePage() {
               
               {currentIndex === totalQuestions - 1 ? (
                 <Button 
-                  onClick={() => setShowSubmitDialog(true)}
+                  onClick={() => {
+                    saveCurrentAnswer();
+                    setShowSubmitDialog(true);
+                  }}
                   className="gap-2"
                 >
                   Finish Test
