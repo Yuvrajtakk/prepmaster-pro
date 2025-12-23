@@ -25,6 +25,51 @@ import {
   Clock, Grid3X3
 } from "lucide-react";
 
+// Helper to format match questions with proper list display
+function formatQuestionText(text: string): React.ReactNode {
+  // Check if it's a match question with List-I/List-II pattern
+  const listPattern = /List[-\s]?I[I]?[:.]?\s*(.*?)\s*List[-\s]?II[:.]?\s*(.*)/i;
+  const match = text.match(listPattern);
+  
+  if (match) {
+    const beforeLists = text.substring(0, text.search(listPattern));
+    const list1Items = match[1].split(/[,;]/).map(s => s.trim()).filter(Boolean);
+    const list2Items = match[2].split(/[,;]/).map(s => s.trim()).filter(Boolean);
+    
+    return (
+      <div className="space-y-4">
+        <p>{beforeLists}</p>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="p-3 rounded-lg bg-muted/50 border border-border/50">
+            <p className="font-medium text-primary mb-2">List-I</p>
+            <ol className="list-none space-y-1">
+              {list1Items.map((item, i) => (
+                <li key={i} className="text-sm">
+                  <span className="font-medium mr-2">{String.fromCharCode(97 + i)}.</span>
+                  {item}
+                </li>
+              ))}
+            </ol>
+          </div>
+          <div className="p-3 rounded-lg bg-muted/50 border border-border/50">
+            <p className="font-medium text-primary mb-2">List-II</p>
+            <ol className="list-none space-y-1">
+              {list2Items.map((item, i) => (
+                <li key={i} className="text-sm">
+                  <span className="font-medium mr-2">{i + 1}.</span>
+                  {item}
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  return text;
+}
+
 export default function PracticePage() {
   const { courseId, topicId } = useParams<{ courseId: string; topicId?: string }>();
   const { isAuthenticated, isLoading } = useAuth();
@@ -96,20 +141,21 @@ export default function PracticePage() {
   const isSkipped = currentAnswer?.isSkipped;
 
   const handleNext = () => {
+    // Always save current answer before navigating
+    saveCurrentAnswer();
+    goToNext();
+  };
+  
+  const saveCurrentAnswer = () => {
     if (currentQuestion.question_type === "nat" && numericalInput) {
       submitAnswer(parseFloat(numericalInput));
-    } else if (selectedAnswer) {
+    } else if (selectedAnswer !== null && (Array.isArray(selectedAnswer) ? selectedAnswer.length > 0 : selectedAnswer)) {
       submitAnswer(selectedAnswer);
     }
-    goToNext();
   };
 
   const handlePrevious = () => {
-    if (currentQuestion.question_type === "nat" && numericalInput) {
-      submitAnswer(parseFloat(numericalInput));
-    } else if (selectedAnswer) {
-      submitAnswer(selectedAnswer);
-    }
+    saveCurrentAnswer();
     goToPrevious();
   };
 
@@ -119,11 +165,7 @@ export default function PracticePage() {
 
   const handleSubmitTest = () => {
     // Save current answer before submitting
-    if (currentQuestion.question_type === "nat" && numericalInput) {
-      submitAnswer(parseFloat(numericalInput));
-    } else if (selectedAnswer) {
-      submitAnswer(selectedAnswer);
-    }
+    saveCurrentAnswer();
     
     const result = endSession();
     if (result) {
@@ -229,24 +271,24 @@ export default function PracticePage() {
               {/* Question Text */}
               <div className="mb-8">
                 <p className="text-lg leading-relaxed text-foreground whitespace-pre-wrap">
-                  {currentQuestion.question}
+                  {formatQuestionText(currentQuestion.question)}
                 </p>
               </div>
 
               {/* Answer Options */}
-              {currentQuestion.question_type === "nat" ? (
+              {currentQuestion.question_type === "nat" || !currentQuestion.options || Object.keys(currentQuestion.options).length === 0 ? (
                 <div className="space-y-3">
                   <Label htmlFor="nat-input" className="text-sm font-medium">
-                    Enter your numerical answer:
+                    Enter your answer:
                   </Label>
                   <Input
                     id="nat-input"
-                    type="number"
+                    type={currentQuestion.question_type === "nat" ? "number" : "text"}
                     step="any"
-                    placeholder="Enter a number..."
+                    placeholder={currentQuestion.question_type === "nat" ? "Enter a number..." : "Enter your answer..."}
                     value={numericalInput}
                     onChange={(e) => setNumericalInput(e.target.value)}
-                    className="max-w-xs text-lg"
+                    className="max-w-md text-lg"
                   />
                 </div>
               ) : currentQuestion.question_type === "msq" ? (

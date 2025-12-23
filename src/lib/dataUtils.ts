@@ -1,7 +1,29 @@
 import { Question, Course, Topic, SessionResult, TopicPerformance, UserAnswer } from "@/types/question";
 import questionsData from "@/data/dataset.json";
 
-const questions = questionsData as Question[];
+// Filter out invalid questions (empty, no question text, duplicates)
+function filterValidQuestions(rawQuestions: Question[]): Question[] {
+  const seen = new Set<string>();
+  
+  return rawQuestions.filter(q => {
+    // Skip if no question text or very short
+    if (!q.question || q.question.trim().length < 20) return false;
+    
+    // Skip if question is just the topic name
+    if (q.question.trim().toLowerCase() === q.topic?.toLowerCase()) return false;
+    
+    // Create a normalized version of the question for duplicate detection
+    const normalizedQuestion = q.question.trim().toLowerCase().replace(/\s+/g, ' ');
+    
+    // Skip duplicates
+    if (seen.has(normalizedQuestion)) return false;
+    seen.add(normalizedQuestion);
+    
+    return true;
+  });
+}
+
+const questions = filterValidQuestions(questionsData as Question[]);
 
 // Single unified course - all questions merged
 export function getCourses(): Course[] {
