@@ -47,7 +47,7 @@ export default function AuthPage() {
     const result = await register(registerData.name, registerData.email, registerData.password);
     
     if (result.success) {
-      toast({ title: "Account created!", description: "Welcome to ExamPrep Pro." });
+      toast({ title: "Account created!", description: "Welcome to GatePrep." });
       navigate("/courses");
     } else {
       toast({ title: "Registration failed", description: result.error, variant: "destructive" });
@@ -76,7 +76,7 @@ export default function AuthPage() {
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary mb-4">
               <BookOpen className="h-7 w-7 text-primary-foreground" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground">ExamPrep Pro</h1>
+            <h1 className="text-2xl font-bold text-foreground">GatePrep</h1>
             <p className="text-muted-foreground mt-1">GATE & UGC NET Preparation</p>
           </div>
 

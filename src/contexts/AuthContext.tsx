@@ -23,12 +23,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Check for existing session
-    const storedUser = localStorage.getItem("examprep_user");
+    const storedUser = localStorage.getItem("GatePrep_user");
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser));
       } catch {
-        localStorage.removeItem("examprep_user");
+        localStorage.removeItem("GatePrep_user");
       }
     }
     setIsLoading(false);
@@ -48,13 +48,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Check stored users
-    const storedUsers = JSON.parse(localStorage.getItem("examprep_users") || "[]");
+    const storedUsers = JSON.parse(localStorage.getItem("GatePrep_users") || "[]");
     const existingUser = storedUsers.find((u: any) => u.email === email);
     
     if (existingUser && existingUser.password === password) {
       const userData = { id: existingUser.id, email: existingUser.email, name: existingUser.name };
       setUser(userData);
-      localStorage.setItem("examprep_user", JSON.stringify(userData));
+      localStorage.setItem("GatePrep_user", JSON.stringify(userData));
       return { success: true };
     }
 
@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       name: email.split("@")[0] 
     };
     setUser(userData);
-    localStorage.setItem("examprep_user", JSON.stringify(userData));
+    localStorage.setItem("GatePrep_user", JSON.stringify(userData));
     return { success: true };
   };
 
@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Check if user already exists
-    const storedUsers = JSON.parse(localStorage.getItem("examprep_users") || "[]");
+    const storedUsers = JSON.parse(localStorage.getItem("GatePrep_users") || "[]");
     if (storedUsers.some((u: any) => u.email === email)) {
       return { success: false, error: "An account with this email already exists" };
     }
@@ -94,18 +94,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Create new user
     const newUser = { id: crypto.randomUUID(), name, email, password };
     storedUsers.push(newUser);
-    localStorage.setItem("examprep_users", JSON.stringify(storedUsers));
+    localStorage.setItem("GatePrep_users", JSON.stringify(storedUsers));
 
     const userData = { id: newUser.id, email: newUser.email, name: newUser.name };
     setUser(userData);
-    localStorage.setItem("examprep_user", JSON.stringify(userData));
+    localStorage.setItem("GatePrep_user", JSON.stringify(userData));
     
     return { success: true };
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("examprep_user");
+    localStorage.removeItem("GatePrep_user");
   };
 
   return (

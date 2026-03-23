@@ -15,7 +15,7 @@ export default function LandingPage() {
             <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
               <BookOpen className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-semibold text-lg text-foreground">ExamPrep Pro</span>
+            <span className="font-semibold text-lg text-foreground">GatePrep</span>
           </div>
           <nav className="flex items-center gap-4">
             {isAuthenticated ? (
@@ -156,7 +156,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="py-8 px-4 border-t border-border">
         <div className="container mx-auto text-center text-sm text-muted-foreground">
-          <p>© 2024 ExamPrep Pro. All rights reserved.</p>
+          <p>© 2024 GatePrep. All rights reserved.</p>
         </div>
       </footer>
     </div>

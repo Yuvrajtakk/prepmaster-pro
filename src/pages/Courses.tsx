@@ -50,7 +50,7 @@ export default function CoursesPage() {
             <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
               <BookOpen className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-semibold text-lg text-foreground">ExamPrep Pro</span>
+            <span className="font-semibold text-lg text-foreground">GatePrep</span>
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground hidden sm:block">
